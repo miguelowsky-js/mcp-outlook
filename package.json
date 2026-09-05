@@ -1,0 +1,17 @@
+{
+  "name": "mcp-outlook",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": ["mcp", "outlook", "microsoft-graph"],
+  "author": "Miguel Aguilar",
+  "license": "ISC",
+  "description": "MCP server for personal Outlook/Hotmail accounts via Microsoft Graph.",
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "zod": "^3.23.8"
+  },
+  "type": "module"
+}
