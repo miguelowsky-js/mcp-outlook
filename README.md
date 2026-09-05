@@ -2,7 +2,7 @@
 
 A small MCP server for **personal** Outlook/Hotmail/Live accounts, using the
 Microsoft Graph API directly. The official Outlook MCP server only supports
-work/school (Azure AD) accounts — this one is for everyone else.
+work/school (Azure AD) accounts, this one is for everyone else.
 
 Tools: `list_emails`, `search_emails`, `read_email`, `delete_email` (requires
 explicit confirmation).
@@ -60,5 +60,5 @@ its config, using the full path to `src/index.js`:
 
 ## Notes
 
-- `config.json` and `token-cache.json` hold secrets and are gitignored — never commit them.
+- `config.json` and `token-cache.json` hold secrets and are gitignored, never commit them.
 - `delete_email` moves the message to Deleted Items (like a normal Outlook delete), and only runs if called with `confirm: true`.
