@@ -5,12 +5,16 @@ import { chunk } from "../lib/chunk.js";
 // Microsoft Graph allows at most 20 requests per $batch call.
 const BATCH_LIMIT = 20;
 
-// Deletes one chunk of emails in a single Graph $batch call.
+// Moves one chunk of emails to Deleted Items in a single Graph $batch call.
+// Using the DELETE verb here skips Deleted Items entirely and goes straight
+// to the hidden "Recoverable Items" folder, which isn't what users expect.
 async function deleteBatch(messageIds) {
   const requests = messageIds.map((id, index) => ({
     id: String(index),
-    method: "DELETE",
-    url: `/me/messages/${id}`,
+    method: "POST",
+    url: `/me/messages/${id}/move`,
+    headers: { "Content-Type": "application/json" },
+    body: { destinationId: "deleteditems" },
   }));
 
   const { responses } = await graphFetch("/$batch", {
@@ -32,7 +36,7 @@ export const deleteEmails = {
   config: {
     title: "Delete Emails",
     description:
-      "Permanently deletes one or more emails in a single batch (moves them to Deleted Items). Only call this after the human user has explicitly confirmed they want them deleted. Requires confirm: true.",
+      "Deletes one or more emails in a single batch, moving them to Deleted Items (like pressing Delete in Outlook). Only call this after the human user has explicitly confirmed they want them deleted. Requires confirm: true.",
     inputSchema: z.object({
       messageIds: z.array(z.string()).min(1).describe("Graph message IDs to delete"),
       confirm: z.boolean().describe("Must be true. Set only after the human user has confirmed the deletion."),

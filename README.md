@@ -98,7 +98,7 @@ also wired up in GitHub Actions on every push.
 ## Notes
 
 - `config.json` and `token-cache.json` hold secrets and are gitignored — never commit them.
-- `delete_emails` takes a list of message IDs, moves them to Deleted Items (like a normal Outlook delete) in batches of up to 20 per Graph API call, and only runs if called with `confirm: true`.
+- `delete_emails` takes a list of message IDs, moves them to Deleted Items (like a normal Outlook delete) in batches of up to 20 per Graph API call, and only runs if called with `confirm: true`. It uses Graph's `move` action rather than the `DELETE` verb — `DELETE /me/messages/{id}` skips Deleted Items entirely and drops the message straight into the hidden "Recoverable Items" folder, which isn't visible in Outlook.
 - `list_emails` and `search_emails` return up to `limit` emails per call plus a `nextLink`. Pass that `nextLink` back into the same tool to get the next page; it's `null` once there are no more results.
 
 ## Troubleshooting
