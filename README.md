@@ -1,11 +1,13 @@
 # mcp-outlook
 
+![CI](https://github.com/miguelowsky-js/mcp-outlook/actions/workflows/ci.yml/badge.svg)
+
 A small MCP server for **personal** Outlook/Hotmail/Live accounts, using the
 Microsoft Graph API directly. The official Outlook MCP server only supports
 work/school (Azure AD) accounts — this one is for everyone else.
 
-Tools: `list_emails`, `search_emails`, `read_email`, `delete_email` (requires
-explicit confirmation).
+Tools: `list_emails`, `search_emails`, `read_email`, `delete_emails` (batch
+delete, requires explicit confirmation).
 
 ## 1. Register an Azure app (one-time setup)
 
@@ -45,20 +47,73 @@ refresh token expires.
 ## 4. Connect it to an MCP client
 
 Point your MCP client (e.g. Claude Desktop) at this server by adding it to
-its config, using the full path to `src/index.js`:
+its config, using the full path to `src/index.js` on your machine:
 
 ```json
 {
   "mcpServers": {
     "outlook": {
       "command": "node",
-      "args": ["C:/xampp/htdocs/mcp-outlook-js/src/index.js"]
+      "args": ["/absolute/path/to/mcp-outlook/src/index.js"]
     }
   }
 }
 ```
 
+## How it works
+
+```
+MCP client (e.g. Claude) ──stdio──▶ src/index.js ──▶ tools/*.js ──▶ graphClient.js ──▶ Microsoft Graph API
+                                                          │
+                                                       auth.js (device code login, token refresh)
+```
+
+- **`auth.js`** — logs in with the OAuth 2.0 device code flow (no local
+  redirect server needed) and caches the access/refresh token in
+  `token-cache.json`, refreshing it automatically.
+- **`graphClient.js`** — one shared `fetch` wrapper that adds the auth header
+  and a request timeout, used by every tool.
+- **`tools/*.js`** — one file per MCP tool, each exporting `{ name, config,
+  handler }`; `index.js` just registers all of them.
+
+## Development
+
+```bash
+npm test
+```
+
+Runs the unit tests (Node's built-in test runner, no extra dependencies) —
+also wired up in GitHub Actions on every push.
+
+## Limitations
+
+- **Single user, local only.** It's built to run as one person's local MCP
+  server (like Claude Desktop spawning it), not a multi-tenant service —
+  the token cache is a plain file, not per-user.
+- **`delete_emails` moves to Deleted Items**, matching a normal Outlook
+  delete — not a permanent purge.
+- No automatic retry for Microsoft Graph rate limiting (HTTP 429). If you
+  hit it deleting very large batches, split the request into smaller ones.
+
 ## Notes
 
 - `config.json` and `token-cache.json` hold secrets and are gitignored — never commit them.
-- `delete_email` moves the message to Deleted Items (like a normal Outlook delete), and only runs if called with `confirm: true`.
+- `delete_emails` takes a list of message IDs, moves them to Deleted Items (like a normal Outlook delete) in batches of up to 20 per Graph API call, and only runs if called with `confirm: true`.
+- `list_emails` and `search_emails` return up to `limit` emails per call plus a `nextLink`. Pass that `nextLink` back into the same tool to get the next page; it's `null` once there are no more results.
+
+## Troubleshooting
+
+- **A tool call hangs forever with no error, especially after working once:**
+  This is usually Claude Desktop's own permission dialog, not this server. If
+  you clicked "Allow once" instead of "Always allow" for a tool, Claude
+  Desktop is supposed to ask again once that permission expires — but it can
+  silently hang instead of re-prompting. Fix: click **"Always allow"** for
+  this server's tools (especially `delete_emails`) instead of "Allow once".
+- To see what the server itself is doing (or confirm a hang never even
+  reached it), check Claude Desktop's log for this server:
+  `%LOCALAPPDATA%\Claude\Logs\mcp-server-outlook.log` on Windows. Every Graph
+  API call and response is logged there with a timestamp.
+
+## License
+
+[ISC](LICENSE)

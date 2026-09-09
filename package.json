@@ -1,17 +1,25 @@
 {
   "name": "mcp-outlook",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "test": "node --test"
   },
   "keywords": ["mcp", "outlook", "microsoft-graph"],
   "author": "Miguel Aguilar",
   "license": "ISC",
   "description": "MCP server for personal Outlook/Hotmail accounts via Microsoft Graph.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/miguelowsky-js/mcp-outlook.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
-    "zod": "^3.23.8"
+    "zod": "^4.2.0"
   },
   "type": "module"
 }

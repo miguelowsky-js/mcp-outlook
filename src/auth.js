@@ -4,6 +4,7 @@ import { config, tokenCachePath } from "./config.js";
 const SCOPE = "Mail.Read Mail.ReadWrite offline_access";
 const DEVICE_CODE_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode";
 const TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
+const REQUEST_TIMEOUT_MS = 30000;
 
 function readTokenCache() {
   try {
@@ -29,6 +30,7 @@ async function runDeviceCodeFlow() {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ client_id: config.clientId, scope: SCOPE }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const deviceData = await deviceResponse.json();
   if (!deviceResponse.ok) {
@@ -38,14 +40,16 @@ async function runDeviceCodeFlow() {
   // stdout is reserved for MCP protocol messages, so log to stderr instead.
   console.error(deviceData.message);
 
-  return pollForToken(deviceData.device_code, deviceData.interval);
+  return pollForToken(deviceData.device_code, deviceData.interval, deviceData.expires_in);
 }
 
 // Polls the token endpoint until the user approves the login (or it expires).
-async function pollForToken(deviceCode, intervalSeconds) {
+// Stops after expiresInSeconds so a tool call fails loudly instead of hanging forever.
+async function pollForToken(deviceCode, intervalSeconds, expiresInSeconds) {
   let interval = intervalSeconds;
+  const deadline = Date.now() + expiresInSeconds * 1000;
 
-  while (true) {
+  while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, interval * 1000));
 
     const response = await fetch(TOKEN_URL, {
@@ -56,6 +60,7 @@ async function pollForToken(deviceCode, intervalSeconds) {
         grant_type: "urn:ietf:params:oauth:grant-type:device_code",
         device_code: deviceCode,
       }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     const data = await response.json();
 
@@ -71,6 +76,8 @@ async function pollForToken(deviceCode, intervalSeconds) {
     }
     throw new Error(`Device code login failed: ${data.error_description || data.error}`);
   }
+
+  throw new Error("Device code login timed out: the code expired before it was approved.");
 }
 
 async function refreshAccessToken(refreshToken) {
@@ -83,6 +90,7 @@ async function refreshAccessToken(refreshToken) {
       refresh_token: refreshToken,
       scope: SCOPE,
     }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const data = await response.json();
   if (!response.ok) {
