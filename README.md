@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/miguelowsky-js/mcp-outlook/actions/workflows/ci.yml/badge.svg)
 
-A small MCP server for **personal** Outlook/Hotmail/Live accounts, using the
+A lightweight MCP server for **personal** Outlook/Hotmail/Live accounts, using the
 Microsoft Graph API directly. The official Outlook MCP server only supports
 work/school (Azure AD) accounts, this one is for everyone else.
 
