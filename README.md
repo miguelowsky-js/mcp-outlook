@@ -4,7 +4,7 @@
 
 A small MCP server for **personal** Outlook/Hotmail/Live accounts, using the
 Microsoft Graph API directly. The official Outlook MCP server only supports
-work/school (Azure AD) accounts — this one is for everyone else.
+work/school (Azure AD) accounts, this one is for everyone else.
 
 Tools: `list_emails`, `search_emails`, `read_email`, `delete_emails` (batch
 delete, requires explicit confirmation).
