@@ -1,6 +1,7 @@
 import { fromJsonSchema } from "@modelcontextprotocol/server";
 import { graphFetch } from "../graphClient.js";
 import { chunk } from "../lib/chunk.js";
+import { buildMoveRequests } from "../lib/folders.js";
 
 // Microsoft Graph allows at most 20 requests per $batch call.
 const BATCH_LIMIT = 20;
@@ -9,13 +10,7 @@ const BATCH_LIMIT = 20;
 // Using the DELETE verb here skips Deleted Items entirely and goes straight
 // to the hidden "Recoverable Items" folder, which isn't what users expect.
 async function deleteBatch(messageIds) {
-  const requests = messageIds.map((id, index) => ({
-    id: String(index),
-    method: "POST",
-    url: `/me/messages/${id}/move`,
-    headers: { "Content-Type": "application/json" },
-    body: { destinationId: "deleteditems" },
-  }));
+  const requests = buildMoveRequests(messageIds, "deleteditems");
 
   const { responses } = await graphFetch("/$batch", {
     method: "POST",
