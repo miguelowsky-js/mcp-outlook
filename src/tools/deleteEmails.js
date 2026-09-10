@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { fromJsonSchema } from "@modelcontextprotocol/server";
 import { graphFetch } from "../graphClient.js";
 import { chunk } from "../lib/chunk.js";
 
@@ -37,9 +37,21 @@ export const deleteEmails = {
     title: "Delete Emails",
     description:
       "Deletes one or more emails in a single batch, moving them to Deleted Items (like pressing Delete in Outlook). Only call this after the human user has explicitly confirmed they want them deleted. Requires confirm: true.",
-    inputSchema: z.object({
-      messageIds: z.array(z.string()).min(1).describe("Graph message IDs to delete"),
-      confirm: z.boolean().describe("Must be true. Set only after the human user has confirmed the deletion."),
+    inputSchema: fromJsonSchema({
+      type: "object",
+      properties: {
+        messageIds: {
+          type: "array",
+          items: { type: "string" },
+          minItems: 1,
+          description: "Graph message IDs to delete",
+        },
+        confirm: {
+          type: "boolean",
+          description: "Must be true. Set only after the human user has confirmed the deletion.",
+        },
+      },
+      required: ["messageIds", "confirm"],
     }),
   },
   handler: async ({ messageIds, confirm }) => {

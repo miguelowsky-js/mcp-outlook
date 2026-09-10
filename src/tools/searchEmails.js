@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { fromJsonSchema } from "@modelcontextprotocol/server";
 import { graphFetch } from "../graphClient.js";
 
 const SELECT_FIELDS = "subject,from,receivedDateTime,isRead";
@@ -9,13 +9,26 @@ export const searchEmails = {
     title: "Search Emails",
     description:
       "Searches emails across all folders by keyword (subject, body, sender, etc). Returns a nextLink when more pages are available.",
-    inputSchema: z.object({
-      query: z.string().describe("Text to search for"),
-      limit: z.number().int().min(1).max(50).default(10).describe("Max number of emails per page"),
-      nextLink: z.string().optional().describe("Pass the nextLink from a previous call to get the next page"),
+    inputSchema: fromJsonSchema({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Text to search for" },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: 50,
+          default: 10,
+          description: "Max number of emails per page",
+        },
+        nextLink: {
+          type: "string",
+          description: "Pass the nextLink from a previous call to get the next page",
+        },
+      },
+      required: ["query"],
     }),
   },
-  handler: async ({ query, limit, nextLink }) => {
+  handler: async ({ query, limit = 10, nextLink }) => {
     // A nextLink already encodes the query, page size, and cursor, so use it as-is.
     let url = nextLink;
     if (!url) {
